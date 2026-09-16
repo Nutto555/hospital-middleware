@@ -22,6 +22,10 @@ func TestRequireAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	expired, _, err := auth.NewJWT("secret", -time.Hour).Issue(auth.Principal{StaffID: "staff-1", HospitalCode: "hospital-a"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	r := gin.New()
 	r.GET("/protected", requireAuth(tokens), func(c *gin.Context) {
@@ -45,6 +49,7 @@ func TestRequireAuth(t *testing.T) {
 		{"empty bearer", "Bearer ", 401, `{"error":"invalid or missing token"}`},
 		{"garbage", "Bearer nope", 401, `{"error":"invalid or missing token"}`},
 		{"other secret", "Bearer " + foreign, 401, `{"error":"invalid or missing token"}`},
+		{"expired", "Bearer " + expired, 401, `{"error":"invalid or missing token"}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

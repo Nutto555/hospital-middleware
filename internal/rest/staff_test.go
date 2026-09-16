@@ -27,9 +27,7 @@ func post(r http.Handler, path, body string, headers ...string) *httptest.Respon
 }
 
 func TestCreateStaff(t *testing.T) {
-	var gotHospital string
 	svc := fakeStaffService{createFn: func(username, password, hospital string) (domain.Staff, error) {
-		gotHospital = hospital
 		switch {
 		case hospital == "hospital-z":
 			return domain.Staff{}, domain.ErrUnknownHospital
@@ -75,8 +73,21 @@ func TestCreateStaff(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateStaffTrimsHospital(t *testing.T) {
+	var gotHospital string
+	svc := fakeStaffService{createFn: func(username, password, hospital string) (domain.Staff, error) {
+		gotHospital = hospital
+		return domain.Staff{ID: "id-1", HospitalCode: "hospital-a", Username: username}, nil
+	}}
+	r := rest.NewRouter(rest.Deps{Staff: svc})
+	rec := post(r, "/staff/create", `{"username":"nurse.1","password":"correct horse","hospital":" hospital-a "}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status = %d body %s", rec.Code, rec.Body)
+	}
 	if gotHospital != "hospital-a" {
-		t.Fatalf("hospital must be trimmed before the service sees it, got %q", gotHospital)
+		t.Fatalf("hospital passed to the service = %q, want it trimmed", gotHospital)
 	}
 }
 
