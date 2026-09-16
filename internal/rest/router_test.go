@@ -27,3 +27,14 @@ func TestHealthz(t *testing.T) {
 		t.Fatalf("body = %s", got)
 	}
 }
+
+func TestWrongMethodIsRejectedNotUnknown(t *testing.T) {
+	r := rest.NewRouter(rest.Deps{})
+	for _, path := range []string{"/staff/create", "/staff/login", "/patient/search"} {
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusMethodNotAllowed {
+			t.Errorf("GET %s: status = %d, want 405", path, rec.Code)
+		}
+	}
+}

@@ -13,6 +13,7 @@ type Deps struct {
 // NewRouter builds the engine with every route and middleware registered.
 func NewRouter(d Deps) *gin.Engine {
 	r := gin.New()
+	r.HandleMethodNotAllowed = true
 	r.Use(gin.Logger(), gin.Recovery())
 	r.GET("/healthz", health)
 	r.POST("/staff/create", createStaff(d.Staff))
