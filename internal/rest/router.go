@@ -5,7 +5,8 @@ import "github.com/gin-gonic/gin"
 
 // Deps are the collaborators the handlers need.
 type Deps struct {
-	Staff StaffService
+	Staff  StaffService
+	Tokens TokenVerifier
 }
 
 // NewRouter builds the engine with every route and middleware registered.
