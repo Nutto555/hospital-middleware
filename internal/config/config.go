@@ -23,7 +23,7 @@ func Load() (Config, error) {
 		Port:             getenv("PORT", "8080"),
 		DatabaseURL:      os.Getenv("DATABASE_URL"),
 		JWTSecret:        os.Getenv("JWT_SECRET"),
-		HospitalABaseURL: os.Getenv("HOSPITAL_A_BASE_URL"),
+		HospitalABaseURL: getenv("HOSPITAL_A_BASE_URL", "https://hospital-a.api.co.th"),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")

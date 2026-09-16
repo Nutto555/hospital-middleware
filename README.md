@@ -114,11 +114,23 @@ failed.
 
 ### Upstream: Hospital A
 
-`GET {HOSPITAL_A_BASE_URL}/patient/search/{id}`, `id` a national id or passport id. 200 returns
+`GET https://hospital-a.api.co.th/patient/search/{id}` (the base URL is `HOSPITAL_A_BASE_URL`),
+`id` a national id or passport id. 200 returns
 `first_name_th, middle_name_th, last_name_th, first_name_en, middle_name_en, last_name_en,
 date_of_birth, patient_hn, national_id, passport_id, phone_number, email, gender`; 404 when
 unknown. `cmd/hismock` implements this contract from a small fixture file. Assumed and mirrored
 by the mock: dates are `YYYY-MM-DD`, gender is `M` or `F`, unknown ids are 404.
+
+## Where each requirement lives
+
+| requirement | where |
+|---|---|
+| search and display patient information from the hospital information system | `internal/his` (client contract, Hospital A implementation), used by `internal/service/patient.go` when a search by id misses locally |
+| patient model compatible with hospital data | `migrations/000001_init.up.sql` (`patients`), columns mirror the HIS fields; `internal/domain/patient.go` |
+| staff model, search limited to the staff member's own hospital | `migrations/000001_init.up.sql` (`staff.hospital_code`), hospital carried in the token (`internal/auth`), enforced in `internal/service/patient.go` and the SQL in `internal/repository/postgres/patient.go` |
+| `/staff/create`, `/staff/login`, `/patient/search` | `internal/rest` |
+| unit tests, positive and negative, per API | `internal/rest/*_test.go` through the router; `internal/service/*_test.go`; `make test`, `make test-db` |
+| docker compose with nginx, the Go service and Postgres | `docker-compose.yml`, `Dockerfile`, `deploy/nginx/default.conf` |
 
 ## Project structure
 
@@ -209,7 +221,7 @@ not found and HIS unavailable.
 | `DATABASE_URL` | required | |
 | `JWT_SECRET` | required | the compose file ships a development value |
 | `JWT_TTL` | `24h` | |
-| `HOSPITAL_A_BASE_URL` | empty | empty means Hospital A searches use the local copy only |
+| `HOSPITAL_A_BASE_URL` | `https://hospital-a.api.co.th` | the compose file points it at the bundled mock |
 | `HIS_TIMEOUT` | `5s` | |
 | `GIN_MODE` | gin's default | the compose file sets `release` |
 

@@ -43,11 +43,8 @@ func run() error {
 	}
 	defer pool.Close()
 
-	registry := his.Registry{}
-	if cfg.HospitalABaseURL != "" {
-		registry[hospitala.Code] = hospitala.New(cfg.HospitalABaseURL, &http.Client{Timeout: cfg.HISTimeout})
-	} else {
-		log.Printf("HOSPITAL_A_BASE_URL not set: %s searches are served from the local copy only", hospitala.Code)
+	registry := his.Registry{
+		hospitala.Code: hospitala.New(cfg.HospitalABaseURL, &http.Client{Timeout: cfg.HISTimeout}),
 	}
 
 	tokens := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)

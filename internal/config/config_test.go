@@ -24,7 +24,7 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Port != "8080" || cfg.JWTTTL != 24*time.Hour || cfg.HISTimeout != 5*time.Second || cfg.HospitalABaseURL != "" {
+	if cfg.Port != "8080" || cfg.JWTTTL != 24*time.Hour || cfg.HISTimeout != 5*time.Second || cfg.HospitalABaseURL != "https://hospital-a.api.co.th" {
 		t.Errorf("unexpected defaults: %+v", cfg)
 	}
 }
