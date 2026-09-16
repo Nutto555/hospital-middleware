@@ -19,3 +19,11 @@ func (f fakeStaffService) Create(_ context.Context, username, password, hospital
 func (f fakeStaffService) Login(_ context.Context, username, password, hospital string) (service.Session, error) {
 	return f.loginFn(username, password, hospital)
 }
+
+type fakePatientService struct {
+	searchFn func(hospitalCode string, c domain.SearchCriteria) ([]domain.Patient, error)
+}
+
+func (f fakePatientService) Search(_ context.Context, hospitalCode string, c domain.SearchCriteria) ([]domain.Patient, error) {
+	return f.searchFn(hospitalCode, c)
+}

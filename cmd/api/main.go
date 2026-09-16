@@ -13,6 +13,8 @@ import (
 
 	"github.com/Nutto555/hospital-middleware/internal/auth"
 	"github.com/Nutto555/hospital-middleware/internal/config"
+	"github.com/Nutto555/hospital-middleware/internal/his"
+	"github.com/Nutto555/hospital-middleware/internal/his/hospitala"
 	"github.com/Nutto555/hospital-middleware/internal/repository/postgres"
 	"github.com/Nutto555/hospital-middleware/internal/rest"
 	"github.com/Nutto555/hospital-middleware/internal/service"
@@ -41,9 +43,18 @@ func run() error {
 	}
 	defer pool.Close()
 
+	registry := his.Registry{}
+	if cfg.HospitalABaseURL != "" {
+		registry[hospitala.Code] = hospitala.New(cfg.HospitalABaseURL, &http.Client{Timeout: cfg.HISTimeout})
+	} else {
+		log.Printf("HOSPITAL_A_BASE_URL not set: %s searches are served from the local copy only", hospitala.Code)
+	}
+
 	tokens := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)
 	router := rest.NewRouter(rest.Deps{
-		Staff: service.NewStaff(postgres.NewHospitalRepo(pool), postgres.NewStaffRepo(pool), tokens),
+		Staff:    service.NewStaff(postgres.NewHospitalRepo(pool), postgres.NewStaffRepo(pool), tokens),
+		Patients: service.NewPatient(postgres.NewPatientRepo(pool), registry),
+		Tokens:   tokens,
 	})
 	return serve(ctx, ":"+cfg.Port, router)
 }
