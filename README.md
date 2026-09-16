@@ -36,7 +36,19 @@ curl -s -X POST localhost/patient/search -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"first_name":"somchai"}'
 ```
 
-A staff member of `hospital-b` running the same searches gets `{"patients":[]}`.
+A staff member of `hospital-b` cannot see that patient:
+
+```
+curl -s -X POST localhost/staff/create -H 'Content-Type: application/json' \
+  -d '{"username":"nurse.b","password":"correct horse battery","hospital":"hospital-b"}'
+
+TOKEN_B=$(curl -s -X POST localhost/staff/login -H 'Content-Type: application/json' \
+  -d '{"username":"nurse.b","password":"correct horse battery","hospital":"hospital-b"}' | jq -r .token)
+
+curl -s -X POST localhost/patient/search -H "Authorization: Bearer $TOKEN_B" \
+  -H 'Content-Type: application/json' -d '{"national_id":"1234567890121"}'
+# {"patients":[]}
+```
 
 ## API
 
@@ -51,7 +63,7 @@ system was needed and did not answer.
 ```
 
 `username`: 3 to 64 characters of letters, digits, `.`, `_`, `-`, unique within the hospital.
-`password`: 8 to 72 bytes. `hospital`: a known hospital by code or name (`hospital-a` /
+`password`: 8 characters to 72 bytes. `hospital`: a known hospital by code or name (`hospital-a` /
 `Hospital A`, `hospital-b` / `Hospital B`).
 
 201 `{"id": "<uuid>", "username": "nurse.a", "hospital": "hospital-a"}`. 400 on validation or an
@@ -199,9 +211,11 @@ not found and HIS unavailable.
 | `JWT_TTL` | `24h` | |
 | `HOSPITAL_A_BASE_URL` | empty | empty means Hospital A searches use the local copy only |
 | `HIS_TIMEOUT` | `5s` | |
+| `GIN_MODE` | gin's default | the compose file sets `release` |
 
 ## Limitations
 
 No pagination (results are capped at 100), no token refresh or revocation, no roles (staff
-creation is open, as the brief specifies), the local copy is refreshed only on a miss, and only
-the Hospital A interface is integrated. Each would be the next step in a real deployment.
+creation is open, as the brief specifies; a real deployment would put it behind an admin role),
+the local copy is refreshed only on a miss, and only the Hospital A interface is integrated. Each
+would be the next step in a real deployment.
