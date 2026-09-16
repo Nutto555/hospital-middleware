@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -43,9 +44,11 @@ func (r searchRequest) criteria() (domain.SearchCriteria, error) {
 		Email:       clean(r.Email),
 	}
 	if c.Email != nil {
-		if _, err := mail.ParseAddress(*c.Email); err != nil {
+		addr, err := mail.ParseAddress(*c.Email)
+		if err != nil {
 			return domain.SearchCriteria{}, errors.New("email is not a valid address")
 		}
+		c.Email = &addr.Address
 	}
 	if d := clean(r.DateOfBirth); d != nil {
 		t, err := time.Parse(dateLayout, *d)
@@ -108,11 +111,9 @@ func toPatientResponse(p domain.Patient) patientResponse {
 func searchPatients(svc PatientService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var in searchRequest
-		if c.Request.ContentLength != 0 {
-			if err := c.ShouldBindJSON(&in); err != nil {
-				writeError(c, http.StatusBadRequest, "invalid request body")
-				return
-			}
+		if err := c.ShouldBindJSON(&in); err != nil && !errors.Is(err, io.EOF) {
+			writeError(c, http.StatusBadRequest, "invalid request body")
+			return
 		}
 		criteria, err := in.criteria()
 		if err != nil {

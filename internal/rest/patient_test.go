@@ -93,6 +93,13 @@ func TestSearchPatients(t *testing.T) {
 		}
 	})
 
+	t.Run("email criterion is the parsed address", func(t *testing.T) {
+		rec := post(r, "/patient/search", `{"email":"Somchai <somchai@example.com>"}`, "Authorization", bearer)
+		if rec.Code != 200 || *gotCriteria.Email != "somchai@example.com" {
+			t.Fatalf("got %d %s, criteria %+v", rec.Code, rec.Body, gotCriteria)
+		}
+	})
+
 	cases := []struct {
 		name     string
 		body     string
