@@ -11,8 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Nutto555/hospital-middleware/internal/auth"
 	"github.com/Nutto555/hospital-middleware/internal/config"
+	"github.com/Nutto555/hospital-middleware/internal/repository/postgres"
 	"github.com/Nutto555/hospital-middleware/internal/rest"
+	"github.com/Nutto555/hospital-middleware/internal/service"
 )
 
 func main() {
@@ -29,7 +32,19 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	router := rest.NewRouter(rest.Deps{})
+	if err := postgres.Migrate(cfg.DatabaseURL); err != nil {
+		return err
+	}
+	pool, err := postgres.Connect(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	tokens := auth.NewJWT(cfg.JWTSecret, cfg.JWTTTL)
+	router := rest.NewRouter(rest.Deps{
+		Staff: service.NewStaff(postgres.NewHospitalRepo(pool), postgres.NewStaffRepo(pool), tokens),
+	})
 	return serve(ctx, ":"+cfg.Port, router)
 }
 
