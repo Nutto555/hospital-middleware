@@ -27,6 +27,7 @@ func writeServiceError(c *gin.Context, err error) {
 	case errors.Is(err, domain.ErrConflict):
 		writeError(c, http.StatusConflict, "username already exists in this hospital")
 	case errors.Is(err, domain.ErrHISUnavailable):
+		log.Printf("%s %s: %v", c.Request.Method, c.Request.URL.Path, err)
 		writeError(c, http.StatusBadGateway, domain.ErrHISUnavailable.Error())
 	default:
 		log.Printf("%s %s: %v", c.Request.Method, c.Request.URL.Path, err)

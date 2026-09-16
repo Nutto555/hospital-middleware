@@ -35,6 +35,11 @@ func (c *Client) SearchPatient(ctx context.Context, id string) (his.Patient, err
 	req.Header.Set("Accept", "application/json")
 	resp, err := c.http.Do(req)
 	if err != nil {
+		var uerr *url.Error
+		// url.Error carries the request URL, which holds the patient id.
+		if errors.As(err, &uerr) {
+			err = uerr.Err
+		}
 		return his.Patient{}, fmt.Errorf("hospital a: %w", err)
 	}
 	defer resp.Body.Close()

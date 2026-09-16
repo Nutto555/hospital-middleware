@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,7 +86,25 @@ func TestSearchPatientTimeout(t *testing.T) {
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
-	if _, err := c.SearchPatient(ctx, "x"); err == nil || errors.Is(err, his.ErrNotFound) {
+	_, err := c.SearchPatient(ctx, "x")
+	if err == nil || errors.Is(err, his.ErrNotFound) {
 		t.Fatalf("err = %v, want a transport error", err)
+	}
+	if strings.Contains(err.Error(), "/patient/search/") {
+		t.Fatalf("err = %v must not contain the request path", err)
+	}
+}
+
+func TestSearchPatientEscapesID(t *testing.T) {
+	var gotPath string
+	c := server(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath()
+		w.WriteHeader(http.StatusNotFound)
+	})
+	if _, err := c.SearchPatient(context.Background(), "AB/12 34"); err == nil {
+		t.Fatal("want an error")
+	}
+	if gotPath != "/patient/search/AB%2F12%2034" {
+		t.Fatalf("path = %s", gotPath)
 	}
 }
