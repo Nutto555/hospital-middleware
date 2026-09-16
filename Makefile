@@ -23,6 +23,7 @@ test-db: ## repository tests against postgres from compose (host port 5433)
 	TEST_DATABASE_URL=$(TEST_DATABASE_URL) go test -race -count=1 ./internal/repository/...
 
 run: ## run the api locally against the compose postgres (needs .env, see .env.example)
+	$(COMPOSE_TEST) up -d --wait postgres
 	set -a && . ./.env && set +a && go run ./cmd/api
 
 up: ## build and start nginx, api, hospital-a mock and postgres
